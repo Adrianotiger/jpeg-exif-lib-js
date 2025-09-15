@@ -1,0 +1,98 @@
+#drop_zone {
+	border: 5px solid blue;
+}
+html {
+	width: 99%;
+	height: 99%;
+	position: fixed;
+	overflow:hidden;
+}
+body {
+	width: 100%;
+	height: 100%;
+	margin: 0px;
+	text-align:center;
+}
+
+.imagediv
+{
+	display: block;
+	width: 60%;
+	height: 100%;
+}
+
+.imagediv img
+{
+	max-width: 100%;
+	max-height: 100%;
+}
+
+.infodiv
+{
+	display: block;
+	position: absolute;
+	right: 0px;
+	top: 0px;
+	height: 100%;
+	width: 39%;
+	border: 2px solid gray;
+	overflow-y: scroll;
+	overflow-x: hidden;
+	text-align: left;
+}
+
+.infodiv h2
+{
+	margin: 5px;
+}
+.infodiv ul
+{
+	padding-left: 16px;
+	margin-left: 16px;
+}
+
+.infodiv li
+{
+	cursor: pointer;
+	list-style-image: url(images/pie.png);
+}
+
+.infodiv .attr li
+{
+	list-style-image: url(images/tag.png);
+}
+
+.bindiv
+{
+	display: block;
+	position: absolute;
+	left: 6px;
+	top: 205px;
+	height: calc(100% - 205px);
+	width: calc(60% - 8px);
+	border: 2px solid black;
+	border-radius: 5px;
+	overflow-y: scroll;
+	font-family: monospace;
+	overflow-y: scroll;
+	overflow-x: auto;
+	text-align: left;
+}
+
+.bindiv span
+{
+	padding: 1px;
+}
+
+.bindiv b
+{
+	background: #aaa;
+	padding: 1px;
+	margin-right: 10px;
+	user-select: none;
+}
+
+.bindiv i
+{
+	user-select: none;
+}

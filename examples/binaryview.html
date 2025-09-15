@@ -1,0 +1,323 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Screenshot maker</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+		<script src="jpg.js"></script>
+		<script src="exif.js"></script>
+		<link href="page.css" rel="stylesheet" />
+  </head>
+  <body>
+		<div  id="drop_zone" class="imagediv">
+			Upload image to get the EXIF info.
+			<br>
+			<img id="image1" src="Test3.jpg" style="width:288px;height:180px" />
+			<img id="image2" src="Test.t.jpg" style="width:288px;height:180px" />
+			<div id="bin_zone" class="bindiv"></div>
+		</div>
+		<div  id="info_zone" class="infodiv">File info.</div>
+		
+		<script>
+			let jpeg = null;
+			const dp = document.getElementById("drop_zone");
+			const ip = document.getElementById("info_zone");
+			const bp = document.getElementById("bin_zone");
+			let jMax = 0;
+			
+		</script>
+		
+		<script>
+			dp.addEventListener("drop", dropHandler);
+			dp.addEventListener("dragover", (event) => {
+				console.log("File(s) in drop zone");
+				dp.style.borderColor = "green";
+				dp.style.backgroundColor = "gray";
+				// Prevent default behavior (Prevent file from being opened)
+				event.preventDefault();
+			});
+			dp.addEventListener("dragleave", (event) => { 
+				dp.style.borderColor = "blue";
+				dp.style.backgroundColor = "white";
+			});
+			
+			function dropHandler(ev) 
+			{
+				console.log("File(s) dropped");
+				
+				dp.style.borderColor = "blue";
+				dp.style.backgroundColor = "white";
+
+				// Prevent default behavior (Prevent file from being opened)
+				ev.preventDefault();
+
+				if (ev.dataTransfer.items) {
+					// Use DataTransferItemList interface to access the file(s)
+					[...ev.dataTransfer.items].forEach((item, i) => {
+						// If dropped items aren't files, reject them
+						if (item.kind === "file") {
+							const file = item.getAsFile();
+							console.log(file);
+							if(!file.type.startsWith("image"))
+							{
+								alert("File need to be an image");
+							}
+							else
+							{
+								jpeg = new JPG(file);
+								
+								jpeg.open().then(()=>{
+									bp.innerHTML = "";
+
+									//jpeg.setExif(JPGCONST.EXIF.DATETIME, "2030:02:01 01:02:03\0");
+
+									let buff = jpeg.getBuffer(true);
+									let arrBuff = new Uint8Array(buff);
+
+									let div1 = _CN("div", {style:"position:absolute;top:20px;left:00px;width:600px;"}, [], bp);
+									let div2 = _CN("div", {style:"position:absolute;top:20px;left:600px;width:600px;"}, [], bp);
+									fillSPAN(0, jpeg.getBinary(), false, div1);
+									setTimeout(()=>{fillSPAN(0, arrBuff, true, div2);}, 200); // as the field must check the linked field
+
+									console.log( jpeg );
+									console.log( buff );
+
+									ip.innerHTML = "";
+									_CN("h2", {}, ["File blocks:"], ip);
+									ip.appendChild(document.createElement("hr"));
+
+									addBlock(ip, jpeg, 0);
+
+									let blob = new Blob([arrBuff]);
+									const dataURL = URL.createObjectURL(blob);
+
+									document.getElementById("image1").src = dataURL;
+								});
+							}
+						}
+					});
+				} 
+			}
+			
+			async function fillSPAN(j, arrBuff, linked, div)
+			{
+				if(j==0)
+				{
+					if(!linked)
+					{
+						_CN("b", {style:"margin-left:20px;"}, ["Original FILE:"], div);
+					}
+					else
+					{
+						_CN("b", {style:"margin-left:20px;"}, ["NEW generated file:"], div);
+					}
+				}
+					
+				const maxJ = jpeg.subsections[1].offset + 100 - (jpeg.subsections[1].offset + 100) % 64 - 5;
+				const upTo = Math.min(j + 256, maxJ);
+				for(;j<upTo;j++)
+				{
+					if((j % 32) === 0) 
+					{
+						_CN("br", {}, [], div);
+						_CN("b", {}, ["0x" + j.toString(16).padStart(4, '0')], div);
+					}
+					else if((j % 8) === 0)
+					{
+						_CN("i", {}, [" "], div);
+					}
+					let s = _CN("span", {}, [arrBuff[j].toString(16).padStart(2, '0')], div);
+					if(linked)
+					{
+						const j2 = j+0;
+						const sps = bp.getElementsByTagName("span");
+						s.addEventListener("mouseenter", ()=>{
+							sps[j2].style.backgroundColor = "#88f";
+						});
+						s.addEventListener("mouseleave", ()=>{
+							sps[j2].style.backgroundColor = "";
+						});
+						if(sps[j2].textContent !== s.textContent)
+						{
+							s.style.backgroundColor = "pink";
+						}
+					}
+				}
+				if(upTo != maxJ)
+				{
+					setTimeout(()=>{fillSPAN(upTo, arrBuff, linked, div);}, 20);
+				}
+				else
+				{
+					if(!linked) jMax = j;
+					_CN("span", {}, ["..."], div);
+					
+					_CN("br", {}, [], div);_CN("br", {}, [], div);
+					_CN("b", {style:"margin-left:20px;"}, ["JPEG Image Data..."], div);
+				}
+			}
+			
+			const levelColor = ["#fff", "#ff0", "#fa0", "#f4a", "#a4f", "#06f", "#0ff"];
+			
+			function addBlock(parent, section, level)
+			{
+				const ul = _CN("ul", {}, [], parent);
+				const li = _CN("li", {}, [section.name.toUpperCase()], ul);
+				
+				const sps = bp.getElementsByTagName("div")[0].getElementsByTagName("span");
+				const sps2 = bp.getElementsByTagName("div")[1]?.getElementsByTagName("span");
+				
+				li.addEventListener("click", (e)=>{
+					e.stopPropagation();
+					console.log(section);
+				});
+				
+				li.addEventListener("mouseenter", ()=>{
+					li.style.background = levelColor[level];
+					for(let j=section.offset;j<section.offset + section.getSize();j++)
+					{
+						if(j >= jMax) break;
+						sps[j].style.background = levelColor[level];
+						if(sps2) sps2[j].style.background = levelColor[level];
+					}
+				});
+				
+				li.addEventListener("mouseleave", ()=>{
+					li.style.background = "";
+					for(let j=section.offset;j<section.offset + section.getSize();j++)
+					{
+						if(j >= jMax) break;
+						if(level > 0)
+						{
+							sps[j].style.background = levelColor[level-1];
+							if(sps2) sps2[j].style.background = levelColor[level-1];
+						}
+						else 
+						{
+							sps[j].style.background = "";
+							if(sps2) sps2[j].style.background = "";
+						}
+						
+					}
+				});
+				
+				let attrOffset = section.offset + 0;
+				const ula = _CN("ul", {class:"attr"}, [], li);
+				
+				Object.keys(section.attributes).forEach(ak=>{
+					let attrString = "";
+					if(ak === "tag") attrString = "0x"+section.getAttribute(ak).toString(16);
+					else attrString = section.getAttribute(ak);
+					if(Array.isArray(attrString)) 
+					{
+						if(attrString.length == 0) attrString = "[]";
+						else attrString = attrString.join(",");
+					}
+					if(!attrString && !Number.isInteger(attrString) && attrString !== "") console.error("invalid attribute");
+					const lia = _CN("li", {}, [_CN("b",null,[ak + ": "]), _CN("i",null,[attrString])], ula);
+					const baseOffset =  attrOffset;
+					const dataOffset = (section.Type && [2,7,5,10].indexOf(section.Type) >= 0 ? jpeg.getRationalBaseOffset(0)+section.getAttribute("offset") : -1);
+					let dataLen = 0;
+					if(dataOffset > 0)
+					{
+						if(section.isRational())
+						{
+							if(!section.isRationalString()) dataLen = 8;
+							else dataLen = section.Length;
+						}
+					}
+					lia.addEventListener("mouseenter", ()=>{
+						lia.style.background = "springgreen";
+						for(let j=baseOffset;j<baseOffset+section.attributes[ak].size;j++)
+						{
+							sps[j].style.background = "springgreen";
+						}
+						if(dataOffset >= jMax) return;
+						if(dataOffset > 0) setParseTag(sps[dataOffset], section);
+						else setParseTag(sps[baseOffset], section);
+						
+						for(let j=dataOffset;j<dataOffset+dataLen;j++)
+						{
+							sps[j].style.background = "springgreen";
+						}
+					});
+
+					lia.addEventListener("mouseleave", ()=>{
+						lia.style.background = "";
+						for(let j=baseOffset;j<baseOffset+section.attributes[ak].size;j++)
+						{
+							sps[j].style.background = levelColor[level];
+						}
+						if(dataOffset >= jMax) return;
+						if(dataOffset > 0) setParseTag(sps[dataOffset], null);
+						else setParseTag(sps[baseOffset], null);
+						for(let j=dataOffset;j<dataOffset+dataLen;j++)
+						{
+							sps[j].style.background = levelColor[level-1];
+						}
+					});
+					attrOffset += section.attributes[ak].size;
+				});
+				
+				
+				const definedEntries = Object.entries(section.subsections).map(([index, value]) => ({
+					index: Number(index),
+					value
+				}));
+				
+				for(let j=0;j<definedEntries.length;j++)
+				{
+					addBlock(li, section.subsections[definedEntries[j].index], level + 1);
+				}
+			}
+			
+			const divParse = _CN("div", {style:"width:300px;min-height:100px;background:#aaa;border-style:ridge;border-width:2px;border-radius:5px;box-shadow:2px 2px 5px;position:absolute;left:0px;top:0px;transition:all 0.5s;opacity:0;"}, [], document.body);
+			function setParseTag(el, section)
+			{
+				if(!section)
+				{
+					divParse.style.opacity = 0;
+					return;
+				}
+				const r = el.getBoundingClientRect();
+				divParse.style.left = parseInt(r.left) + "px";
+				divParse.style.top = (parseInt(r.top) + 20) + "px";
+				divParse.style.opacity = 1;
+				
+				divParse.innerHTML = "";
+				_CN("h3", null, [section.name], divParse);
+				if(section.Type == 5 || section.Type == 10) // Rational
+				{
+					_CN("b", null, ["Rational Data: [" + section.RationalData[0] + ", " + section.RationalData[1] + "]"], divParse);
+				}
+				else if(section.Type == 2) // ASCII
+				{
+					_CN("b", null, ["ASCII: [" + section.RationalData + "]"], divParse);
+				}
+				else
+				{
+					if(section.DataOffset)
+					{
+						if(section.isRational())
+							_CN("b", null, ["Value: " + section.DataOffset + " (" + (section.TagOptions?section.TagOptions[section.DataOffset]:"?") + ")"], divParse);
+						else
+							_CN("b", null, ["Value: " + section.getAttribute("value") + " (Type:" + (section.TagOptions?section.TagOptions[section.getAttribute("value")]:section.getAttribute("type")) + ")"], divParse);
+					}
+					else
+					{
+						_CN("b", {style:"display:block"}, ["Attributes: " + Object.keys(section.attributes).length], divParse);
+						_CN("b", {style:"display:block"}, ["Subsections: " + section.subsections?.length], divParse);
+						_CN("b", {style:"display:block"}, ["Block size: " + section.view.byteLength], divParse);
+						
+						if(section.getAttribute("tagsRaw"))
+						{
+							_CN("b", {style:"display:block"}, ["Tags size: " + (section.getAttribute("tagsRaw").length + 1)], divParse);
+							_CN("b", {style:"display:block"}, ["Rational size: " + (section.getAttribute("dataRaw").length + 1)], divParse);
+						}
+					}
+				}
+			}
+			
+		</script>
+  </body>
+</html>
