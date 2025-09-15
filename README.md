@@ -7,3 +7,4 @@ The project consists of a simple and easy-to-read library that allow you to read
 
 You can use it to add some exif information (like copyright, date, etc.) to simple jpeg, for example the one generated over a canvas.
 
+Check the <a href="examples/">EXAMPLES</a> to see what you can do with this library.
