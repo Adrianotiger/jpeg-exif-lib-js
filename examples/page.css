@@ -96,3 +96,58 @@ body {
 {
 	user-select: none;
 }
+
+.bindiv .diffs
+{
+	color: darkred;
+	background-color: pink;
+}
+
+.divParse 
+{
+	width:300px;
+	min-height:100px;
+	background:#aaa;
+	border-style:ridge;
+	border-width:2px;
+	border-radius:5px;
+	box-shadow:2px 2px 5px;
+	position:absolute;
+	left:0px;
+	top:800px;
+	transition:all 0.5s ease-out;
+	opacity:0;
+	padding: 3px;
+}
+
+.divParse td, .divParse th
+{
+	text-align: left;
+}
+
+.divParse h3
+{
+	margin: 5px;
+}
+
+.canvasdiv
+{
+	display: block;
+	position: absolute;
+	left: 6px;
+	top: 235px;
+	height: calc(100% - 235px);
+	width: calc(60% - 8px);
+	border: 2px solid black;
+	border-radius: 5px;
+	overflow-y: hidden;
+	overflow-x: hidden;
+	text-align: center;
+	margin:0 auto;
+}
+
+.canvasdiv canvas
+{
+	max-height: calc(100vh - 235px);
+	max-width: calc(60vw - 8px);
+}

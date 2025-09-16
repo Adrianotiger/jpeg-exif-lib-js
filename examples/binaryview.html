@@ -4,19 +4,58 @@
     <title>Screenshot maker</title>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-		<script src="jpg.js"></script>
-		<script src="exif.js"></script>
+		<script src="../lib/jpg.js" ></script>
+		<script src="../lib/tools.js" ></script>
 		<link href="page.css" rel="stylesheet" />
   </head>
   <body>
 		<div  id="drop_zone" class="imagediv">
-			Upload image to get the EXIF info.
+			Drag an image here (local image or a test image), to parse the binary.
 			<br>
-			<img id="image1" src="Test3.jpg" style="width:288px;height:180px" />
-			<img id="image2" src="Test.t.jpg" style="width:288px;height:180px" />
-			<div id="bin_zone" class="bindiv"></div>
+			<span style="display:inline-block;">
+				<img id="image1" src="../test_images/test_noexif.jpg" style="max-height:120px" /><br>
+				NO EXIF
+			</span>
+			<span style="display:inline-block;">
+				<img id="image2" src="../test_images/test_baseexif.jpg" style="max-height:120px" /><br>
+				BASE EXIF
+			</span>
+			<span style="display:inline-block;">
+				<img id="image3" src="../test_images/test_advanced.jpg" style="max-height:120px" /><br>
+				EXTENDED EXIF
+			</span>
+			<span style="display:inline-block;">
+				<img id="image4" src="../test_images/test_full.jpg" style="max-height:120px" /><br>
+				FULL EXIF
+			</span>
+			<div id="bin_zone" class="bindiv">
+				
+			</div>
 		</div>
-		<div  id="info_zone" class="infodiv">File info.</div>
+		<div  id="info_zone" class="infodiv">
+			<img src="../images/exif_binary.png" style="height:10vh;margin:0 auto;" />
+			<h2>Instructions:</h2>
+			<p>
+				Get an image from your PC and drag it over the left frame. Or get an test image from the top of the page and drag it on that frame.
+			</p>
+			<p>
+				You will get the original file binary on the left and the new generated (from this library) binary on the right side.<br>
+				On the right frame, you will see a human formatted list of attributes of this JPG. Just move the mouse over every attribute to see
+				where the attibute is located in the file.
+			</p>
+			<p>
+				This tool is good if you are creating a JPEG by yourself and want to check if it is wrote like expected.
+			</p>
+			<p>
+				Note: This is just a test. Many tags are still missing! Just use it as it is. Press F12, to open the console, if you want to see more info about your JPG!
+			</p>
+			<p>
+				Tipp: Press the right button on an image to parse the exif section and get a list directly on this page!
+			</p>
+		</div>
+		<img id="image0" src="" style="max-height:60px;position:fixed;top:5px;right:50px;box-shadow:5px 5px 5px #000;" />
+
+		<a style="width:64px;height:64px;cursor:pointer;position:fixed;left:5px;top:5px;" href="../">🏠<br><small>Back to HOME</small></a>
 		
 		<script>
 			let jpeg = null;
@@ -51,13 +90,23 @@
 				// Prevent default behavior (Prevent file from being opened)
 				ev.preventDefault();
 
+				let fileParsed = false;
+
 				if (ev.dataTransfer.items) {
 					// Use DataTransferItemList interface to access the file(s)
-					[...ev.dataTransfer.items].forEach((item, i) => {
+					[...ev.dataTransfer.items].forEach(async (item, i) => {
 						// If dropped items aren't files, reject them
-						if (item.kind === "file") {
-							const file = item.getAsFile();
+						if (!fileParsed && (item.kind === "file" || item.type=="text/uri-list")) {
+							fileParsed = true;
+							let file = item.getAsFile();
 							console.log(file);
+							if(!file) // probably a Firefox bug
+							{
+								let imgUrl = ev.dataTransfer.getData("text/uri-list") || extractImgSrcFromHTML(e.dataTransfer.getData("text/html")).match(/<img[^>]+src="([^"]+)"/)[1];
+								file = await fetch(imgUrl);
+								const blob = await file.blob();
+								file = new File([blob], "image.jpg", { type: blob.type });
+							}
 							if(!file.type.startsWith("image"))
 							{
 								alert("File need to be an image");
@@ -77,7 +126,7 @@
 									let div1 = _CN("div", {style:"position:absolute;top:20px;left:00px;width:600px;"}, [], bp);
 									let div2 = _CN("div", {style:"position:absolute;top:20px;left:600px;width:600px;"}, [], bp);
 									fillSPAN(0, jpeg.getBinary(), false, div1);
-									setTimeout(()=>{fillSPAN(0, arrBuff, true, div2);}, 200); // as the field must check the linked field
+									setTimeout(()=>{fillSPAN(0, arrBuff, true, div2);}, 500); // wait, as the field must check the linked field
 
 									console.log( jpeg );
 									console.log( buff );
@@ -91,7 +140,7 @@
 									let blob = new Blob([arrBuff]);
 									const dataURL = URL.createObjectURL(blob);
 
-									document.getElementById("image1").src = dataURL;
+									document.getElementById("image0").src = dataURL;
 								});
 							}
 						}
@@ -139,7 +188,7 @@
 						});
 						if(sps[j2].textContent !== s.textContent)
 						{
-							s.style.backgroundColor = "pink";
+							s.classList.add("diffs");
 						}
 					}
 				}
@@ -271,7 +320,7 @@
 				}
 			}
 			
-			const divParse = _CN("div", {style:"width:300px;min-height:100px;background:#aaa;border-style:ridge;border-width:2px;border-radius:5px;box-shadow:2px 2px 5px;position:absolute;left:0px;top:0px;transition:all 0.5s;opacity:0;"}, [], document.body);
+			const divParse = _CN("div", {class:"divParse"}, [], document.body);
 			function setParseTag(el, section)
 			{
 				if(!section)
@@ -286,38 +335,41 @@
 				
 				divParse.innerHTML = "";
 				_CN("h3", null, [section.name], divParse);
+				const table = _CN("table", {}, [], divParse);
 				if(section.Type == 5 || section.Type == 10) // Rational
 				{
-					_CN("b", null, ["Rational Data: [" + section.RationalData[0] + ", " + section.RationalData[1] + "]"], divParse);
+					_CN("tr", null, [_CN("th",null,["Rational Data:"]), _CN("td",null, ["[" + section.RationalData[0] + ", " + section.RationalData[1] + "]"])], table);
 				}
 				else if(section.Type == 2) // ASCII
 				{
-					_CN("b", null, ["ASCII: [" + section.RationalData + "]"], divParse);
+					_CN("tr", null, [_CN("th",null,["ASCII:"]), _CN("td",null, ["[" + section.RationalData + "]"])], table);
 				}
 				else
 				{
 					if(section.DataOffset)
 					{
 						if(section.isRational())
-							_CN("b", null, ["Value: " + section.DataOffset + " (" + (section.TagOptions?section.TagOptions[section.DataOffset]:"?") + ")"], divParse);
+							_CN("tr", null, [_CN("th",null,["Value:"]), _CN("td",null, [section.DataOffset + " (" + (section.TagOptions?section.TagOptions[section.DataOffset]:"?") + ")"])], table);
 						else
-							_CN("b", null, ["Value: " + section.getAttribute("value") + " (Type:" + (section.TagOptions?section.TagOptions[section.getAttribute("value")]:section.getAttribute("type")) + ")"], divParse);
+							_CN("tr", null, [_CN("th",null,["Value:"]), _CN("td",null, [section.getAttribute("value") + " (Type:" + (section.TagOptions?section.TagOptions[section.getAttribute("value")]:section.getAttribute("type")) + ")"])], table);
 					}
 					else
 					{
-						_CN("b", {style:"display:block"}, ["Attributes: " + Object.keys(section.attributes).length], divParse);
-						_CN("b", {style:"display:block"}, ["Subsections: " + section.subsections?.length], divParse);
-						_CN("b", {style:"display:block"}, ["Block size: " + section.view.byteLength], divParse);
+						_CN("tr", null, [_CN("th",null,["Attributes:"]), _CN("td",null, [ Object.keys(section.attributes).length ])], table);
+						_CN("tr", null, [_CN("th",null,["Subsections:"]), _CN("td",null, [ section.subsections?.length ])], table);
+						_CN("tr", null, [_CN("th",null,["Block size:"]), _CN("td",null, [ section.view.byteLength ])], table);
 						
 						if(section.getAttribute("tagsRaw"))
 						{
-							_CN("b", {style:"display:block"}, ["Tags size: " + (section.getAttribute("tagsRaw").length + 1)], divParse);
-							_CN("b", {style:"display:block"}, ["Rational size: " + (section.getAttribute("dataRaw").length + 1)], divParse);
+							_CN("tr", null, [_CN("th",null,["Tags size:"]), _CN("td",null, [ (section.getAttribute("tagsRaw").length + 1) ])], table);
+							_CN("tr", null, [_CN("th",null,["Rational size:"]), _CN("td",null, [ (section.getAttribute("dataRaw").length + 1) ])], table);
 						}
 					}
+
+					_CN("tr", null, [_CN("th",null,["Block offset:"]), _CN("td",null, [ (section.offset) + " (0x" + section.offset.toString(16) + ")" ])], table);
 				}
 			}
-			
+			JpegTools.addContextToImages();
 		</script>
   </body>
 </html>

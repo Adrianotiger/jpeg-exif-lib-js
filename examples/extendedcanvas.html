@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>JPEG EXIF LIB JS - Extended canvas</title>
+    <script src="../lib/jpg.js" ></script>
+    <script src="../lib/tools.js" ></script>
+	<link href="page.css" rel="stylesheet" />
+  </head>
+  <body>
+    <div  id="drop_zone" class="imagediv">
+        <h2>Save CANVAS image with some Exif Info</h2>
+        Drag an image here (local image or a test image), to parse the binary.
+        <br>
+        <span style="display:inline-block;">
+            <img id="image1" src="../test_images/test_noexif.jpg" style="max-height:120px" /><br>
+            NO EXIF
+        </span>
+        <span style="display:inline-block;">
+            <img id="image2" src="../test_images/test_baseexif.jpg" style="max-height:120px" /><br>
+            BASE EXIF
+        </span>
+        <span style="display:inline-block;">
+            <img id="image3" src="../test_images/test_advanced.jpg" style="max-height:120px" /><br>
+            EXTENDED EXIF
+        </span>
+        <span style="display:inline-block;">
+            <img id="image4" src="../test_images/test_full.jpg" style="max-height:120px" /><br>
+            FULL EXIF
+        </span>
+        <div id="canvas_zone" class="canvasdiv">
+            <canvas id="canvas"></canvas>
+        </div>
+    </div>
+
+    <div  id="info_zone" class="infodiv">
+        <img src="../images/exif_add.png" style="height:10vh;margin:0 auto;" />
+        <h2>Instructions:</h2>
+        <p>
+            Get an image from your PC and drag it over the left frame. Or get an test image from the top of the page and drag it on that frame.
+        </p>
+        <p>
+            The image will be loaded on to a canvas (on the bottom frame). At this point, if you save the image, you loose every EXIF info from it.<br>
+            This library will give you the possibility to add some EXIF info to the Canvas image, so you can save some extra info on it before you save it locally.
+        </p>
+        <p>
+            This tool is good if you want to save some attributes on the fly from a canvas.
+        </p>
+        <p>
+            Note: This is just a test. Many tags are still missing! Just use it as it is. Press F12, to open the console, if you want to see more info about your JPG!
+        </p>
+        <p>
+            Tipp: Press the right button on an image to parse the exif section and get a list directly on this page!
+        </p>
+        Sample code:<br>
+        <textarea style="width:90%;height:30vh;">
+<html>
+    <head>
+        <script src="lib/jpg.js"></script>
+    </head>
+    <body>
+        <canvas width="300" height="200"></canvas>
+        <script>
+            /* ... draw something on the canvas */
+
+            let jpg = new JPEG(document.getElementsByTagName("canvas")[0]);
+            jpg.open().then(()=>{
+                jpeg.setExif(JPGCONST.EXIF.COPYRIGHT, "Adriano");
+
+                let buff = jpeg.getBuffer(true);
+                let arrBuff = new Uint8Array(buff);
+                let blob = new Blob([arrBuff]);
+                const dataURL = URL.createObjectURL(blob);
+
+                let img = document.createElement("img");
+                img.src=dataURL;
+                document.body.appendChild(img);
+            }).catch(()=>{console.error("Unable to open jpg");});
+        </script>
+    </body>
+</html>
+        </textarea>
+    </div>
+	
+	<hr>
+    <a style="width:64px;height:64px;cursor:pointer;position:fixed;left:5px;top:5px;" href="../">🏠<br><small>Back to HOME</small></a>
+
+    <script>
+        let jpeg = null;
+        const dp = document.getElementById("drop_zone");
+        const ip = document.getElementById("info_zone");
+        const cp = document.getElementById("canvas_zone");
+        let jMax = 0;
+        
+    </script>
+
+    <script>
+        dp.addEventListener("drop", dropHandler);
+        dp.addEventListener("dragover", (event) => {
+            console.log("File(s) in drop zone");
+            dp.style.borderColor = "green";
+            dp.style.backgroundColor = "gray";
+            // Prevent default behavior (Prevent file from being opened)
+            event.preventDefault();
+        });
+        dp.addEventListener("dragleave", (event) => { 
+            dp.style.borderColor = "blue";
+            dp.style.backgroundColor = "white";
+        });
+        
+        function dropHandler(ev) 
+        {
+            console.log("File(s) dropped");
+            
+            dp.style.borderColor = "blue";
+            dp.style.backgroundColor = "white";
+
+            // Prevent default behavior (Prevent file from being opened)
+            ev.preventDefault();
+
+            let fileParsed = false;
+
+            if (ev.dataTransfer.items) {
+                // Use DataTransferItemList interface to access the file(s)
+                [...ev.dataTransfer.items].forEach(async (item, i) => {
+                    // If dropped items aren't files, reject them
+                    if (!fileParsed && (item.kind === "file" || item.type=="text/uri-list")) {
+                        fileParsed = true;
+                        let file = item.getAsFile();
+                        console.log(file);
+                        if(!file) // probably a Firefox bug
+                        {
+                            let imgUrl = ev.dataTransfer.getData("text/uri-list") || extractImgSrcFromHTML(e.dataTransfer.getData("text/html")).match(/<img[^>]+src="([^"]+)"/)[1];
+                            file = await fetch(imgUrl);
+                            const blob = await file.blob();
+                            file = new File([blob], "image.jpg", { type: blob.type });
+                        }
+                        /*if(!file.type.startsWith("image"))
+                        {
+                            alert("File need to be an image");
+                        }
+                        else*/
+                        {
+                            const canv = document.getElementById("canvas");
+                            const ctx = canv.getContext("2d");
+                            const reader = new FileReader();
+                            reader.addEventListener("load", (ev)=>{
+                                const image = new Image();
+                                image.addEventListener("load", ()=>{
+                                    console.log(image);
+                                    canv.width = image.width;
+                                    canv.height = image.height;
+                                    ctx.drawImage(image, 0, 0);
+
+                                    setTimeout(()=>{baseInfo(canv.toDataURL("image/jpeg", 0.90), image);}, 100);
+                                });
+                                image.src = ev.target.result;
+                            });
+                            reader.readAsDataURL(file);
+                        }
+                    }
+                });
+            } 
+        }
+
+        function baseInfo(canvim, origim)
+        {
+            console.log("Canvas JPEG:", canvim);
+            ip.innerHTML = "";
+            _CN("h3", null, ["Image Info:"], ip);
+            _CN("div", null, ["width: " + origim.width + "px"], ip);
+            _CN("div", null, ["height: " + origim.height + "px"], ip);
+            jpeg = new JPG(canvim);
+
+            jpeg.open().then(()=>{
+                //let buffer = jpeg.getBuffer();
+                let exif = jpeg.getExif();
+                console.log(jpeg);
+                if(!exif)
+                {
+                    _CN("div", null, ["No EXIF present in the canvas image"], ip);
+                }
+                else
+                {
+                    exif.subsections.forEach(ss0=>{
+                        let div0 = _CN("div", {style:"padding-left:10px;"}, [ss0.name], ip);
+                        ss0.subsections.forEach(ss1=>{
+                            _CN("div", {style:"padding-left:10px;"}, [ss1.name, ss1.getValue()], div0);
+                        });
+                    });
+                }
+
+                createExifDiv();
+            }).catch(e=>{
+                _CN("div", null, ["Unable to read JPEG image"], ip);
+            });
+        }
+
+        function createExifDiv()
+        {
+            _CN("hr", {}, [], ip);
+
+            let dt0 = new Date();
+            if(jpeg.getExif(JPGCONST.EXIF.DATETIME))
+            {
+                dt0 = jpeg.getExif(JPGCONST.EXIF.DATETIME).getDate();
+            }
+            _CN("div", {}, ["Software - application used to generate or modify image"], ip);
+            let inpSoftware = _CN("input", {placeholder:"JPEG-EXIF-Lib-JS", value:jpeg.getExif(JPGCONST.EXIF.SOFTWARE)??"", type:"text"}, null, ip);
+            _CN("div", {}, ["Copyright - author of the image"], ip);
+            let inpCopyright = _CN("input", {placeholder:"Adriano", value:jpeg.getExif(JPGCONST.EXIF.COPYRIGHT)??"", type:"text"}, null, ip);
+            _CN("div", {}, ["DateTime - date where the image was created"], ip);
+            let inpDateTime = _CN("input", {value:dt0.toLocaleString(),type:"datetime-local"}, null, ip);
+
+            let newImage = null;
+
+            _CN("input", {style:"display:block;width:90%;",type:"submit", value:"Generate JPEG"}, null, ip).addEventListener("click", ()=>{
+                if(inpSoftware.value.length > 0)
+                {
+                    jpeg.setExif(JPGCONST.EXIF.SOFTWARE, inpSoftware.value);
+                }
+                if(inpCopyright.value.length > 0)
+                {
+                    jpeg.setExif(JPGCONST.EXIF.COPYRIGHT, inpCopyright.value);
+                }
+                if(inpDateTime.value.length > 0)
+                {
+                    dt0 = new Date(inpDateTime.value);
+                    let dt0s = dt0.getFullYear() + ":" + String(dt0.getMonth() + 1).padStart(2, '0') + ":" + String(dt0.getDate()).padStart(2, '0') + " ";
+                    dt0s += String(dt0.getHours()).padStart(2, '0') + ":" + String(dt0.getMinutes()).padStart(2, '0') + ":" + String(dt0.getSeconds() + 1).padStart(2, '0');
+                    jpeg.setExif(JPGCONST.EXIF.DATETIME, dt0s);
+                }
+
+                let buff = jpeg.getBuffer(true);
+				let arrBuff = new Uint8Array(buff);
+                let blob = new Blob([arrBuff]);
+                const dataURL = URL.createObjectURL(blob);
+                if(newImage)
+                    ip.removeChild(newImage);
+                newImage = _CN("img", {title:"Download image", style:"width:200px;min-height:10px;display:block;cursor:pointer;"}, [], ip);
+                newImage.src = dataURL;
+                newImage.addEventListener("click", ()=>{
+                    const downloadLink = document.createElement('a');
+                    downloadLink.href = dataURL;
+                    downloadLink.download = 'SampleImage.jpg';
+                    document.body.appendChild(downloadLink);
+                    downloadLink.click();
+                });
+                console.log("NEW IMAGE CREATED", jpeg);
+                JpegTools.addContextToImages();
+            });
+            _CN("hr", {}, [], ip);
+            _CN("p", {}, ["Once generated, click on the image to download the new generated JPG"], ip);
+        }
+
+        JpegTools.addContextToImages();
+    </script>
+
+	Source of this project: <a href="https://github.com/Adrianotiger/jpeg-exif-lib-js">https://github.com/Adrianotiger/jpeg-exif-lib-js</a>
+  </body>
+ </html>
