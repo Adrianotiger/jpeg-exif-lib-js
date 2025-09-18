@@ -13,19 +13,19 @@
         Drag an image here (local image or a test image), to parse the binary.
         <br>
         <span style="display:inline-block;">
-            <img id="image1" src="../test_images/test_noexif.jpg" style="max-height:120px" /><br>
+            <img tag="NO EXIF" class="testImage" src="../test_images/test_noexif.jpg"/><br>
             NO EXIF
         </span>
         <span style="display:inline-block;">
-            <img id="image2" src="../test_images/test_baseexif.jpg" style="max-height:120px" /><br>
+            <img tag="BASE EXIF" class="testImage" src="../test_images/test_baseexif.jpg"/><br>
             BASE EXIF
         </span>
         <span style="display:inline-block;">
-            <img id="image3" src="../test_images/test_advanced.jpg" style="max-height:120px" /><br>
+            <img tag="EXTENDED EXIF" class="testImage" src="../test_images/test_advanced.jpg"/><br>
             EXTENDED EXIF
         </span>
         <span style="display:inline-block;">
-            <img id="image4" src="../test_images/test_full.jpg" style="max-height:120px" /><br>
+            <img tag="FULL EXIF" class="testImage" src="../test_images/test_full.jpg"/><br>
             FULL EXIF
         </span>
         <div id="canvas_zone" class="canvasdiv">
@@ -83,7 +83,9 @@
     </div>
 	
 	<hr>
-    <a style="width:64px;height:64px;cursor:pointer;position:fixed;left:5px;top:5px;" href="../">🏠<br><small>Back to HOME</small></a>
+    <a class="toHome"href="../">
+        back to <img src="../images/favicon_32.png"><br>HOME
+    </a>
 
     <script>
         let jpeg = null;
@@ -98,22 +100,18 @@
         dp.addEventListener("drop", dropHandler);
         dp.addEventListener("dragover", (event) => {
             console.log("File(s) in drop zone");
-            dp.style.borderColor = "green";
-            dp.style.backgroundColor = "gray";
+            dp.classList.add("imagedivdrop");
             // Prevent default behavior (Prevent file from being opened)
             event.preventDefault();
         });
         dp.addEventListener("dragleave", (event) => { 
-            dp.style.borderColor = "blue";
-            dp.style.backgroundColor = "white";
+            dp.classList.remove("imagedivdrop");
         });
         
         function dropHandler(ev) 
         {
             console.log("File(s) dropped");
-            
-            dp.style.borderColor = "blue";
-            dp.style.backgroundColor = "white";
+            dp.classList.remove("imagedivdrop");
 
             // Prevent default behavior (Prevent file from being opened)
             ev.preventDefault();
@@ -147,7 +145,7 @@
                             reader.addEventListener("load", (ev)=>{
                                 const image = new Image();
                                 image.addEventListener("load", ()=>{
-                                    console.log(image);
+                                    //console.log(image);
                                     canv.width = image.width;
                                     canv.height = image.height;
                                     ctx.drawImage(image, 0, 0);
@@ -165,7 +163,7 @@
 
         function baseInfo(canvim, origim)
         {
-            console.log("Canvas JPEG:", canvim);
+            //console.log("Canvas JPEG:", canvim);
             ip.innerHTML = "";
             _CN("h3", null, ["Image Info:"], ip);
             _CN("div", null, ["width: " + origim.width + "px"], ip);
@@ -210,9 +208,9 @@
             _CN("div", {}, ["Copyright - author of the image"], ip);
             let inpCopyright = _CN("input", {placeholder:"Adriano", value:jpeg.getExif(JPGCONST.EXIF.COPYRIGHT)??"", type:"text"}, null, ip);
             _CN("div", {}, ["DateTime - date where the image was created"], ip);
-            let inpDateTime = _CN("input", {value:dt0.toLocaleString(),type:"datetime-local"}, null, ip);
+            let inpDateTime = _CN("input", {value:dt0.toISOString().slice(0, 19),type:"datetime-local"}, null, ip);
 
-            let newImage = null;
+            let newImage = false;
 
             _CN("input", {style:"display:block;width:90%;",type:"submit", value:"Generate JPEG"}, null, ip).addEventListener("click", ()=>{
                 if(inpSoftware.value.length > 0)
@@ -254,6 +252,7 @@
         }
 
         JpegTools.addContextToImages();
+        JpegTools.catchConsoleErrors();
     </script>
 
 	Source of this project: <a href="https://github.com/Adrianotiger/jpeg-exif-lib-js">https://github.com/Adrianotiger/jpeg-exif-lib-js</a>

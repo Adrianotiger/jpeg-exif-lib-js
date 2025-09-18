@@ -1,6 +1,3 @@
-#drop_zone {
-	border: 5px solid blue;
-}
 html {
 	width: 99%;
 	height: 99%;
@@ -14,11 +11,31 @@ body {
 	text-align:center;
 }
 
+.testImage
+{
+	max-height: 120px !important;
+	max-width: 12vw !important;
+	height: auto;
+}
+
 .imagediv
 {
 	display: block;
 	width: 60%;
 	height: 100%;
+	position: absolute;
+	top: 2px;
+	left: 2px;
+
+	border-radius: 10px;
+	background: linear-gradient(to bottom, #def, #cdf);
+	box-shadow: inset 0px 0px 3px #fff, inset 2px 2px #bbc, inset -2px -2px #55a, 0px 0px 0px 1px #eef, 0px 0px 3px 0px #005;
+}
+
+.imagedivdrop
+{
+	background: linear-gradient(to bottom, #888, #ddd) ! important;
+	box-shadow: inset 0px 0px 10px 3px #ff0 ! important;
 }
 
 .imagediv img
@@ -35,10 +52,15 @@ body {
 	top: 0px;
 	height: 100%;
 	width: 39%;
-	border: 2px solid gray;
 	overflow-y: scroll;
 	overflow-x: hidden;
 	text-align: left;
+
+	border-radius: 10px;
+	background: linear-gradient(to bottom, #eee, #ddd);
+	box-shadow: inset 0px 0px 3px #fff, inset 2px 2px #bbc, inset -2px -2px #557, 0px 0px 0px 1px #eef, 0px 0px 3px 0px #005;
+
+	scrollbar-color: #448 transparent;
 }
 
 .infodiv h2
@@ -68,15 +90,18 @@ body {
 	position: absolute;
 	left: 6px;
 	top: 205px;
-	height: calc(100% - 205px);
-	width: calc(60% - 8px);
-	border: 2px solid black;
+	height: calc(100% - 215px);
+	width: calc(100% - 16px);
+	border: 0px solid black;
 	border-radius: 5px;
 	overflow-y: scroll;
 	font-family: monospace;
+	font-size: 12px;
 	overflow-y: scroll;
 	overflow-x: auto;
 	text-align: left;
+	box-shadow: inset 0px 0px 3px #fff, inset 2px 2px #bbc, inset -2px -2px #557, 0px 0px 0px 1px #eef, 0px 0px 3px 0px #005;
+	scrollbar-color: #008 transparent;
 }
 
 .bindiv span
@@ -136,8 +161,8 @@ body {
 	position: absolute;
 	left: 6px;
 	top: 235px;
-	height: calc(100% - 235px);
-	width: calc(60% - 8px);
+	height: calc(100% - 245px);
+	width: calc(100% - 16px);
 	border: 2px solid black;
 	border-radius: 5px;
 	overflow-y: hidden;
@@ -150,4 +175,23 @@ body {
 {
 	max-height: calc(100vh - 235px);
 	max-width: calc(60vw - 8px);
+}
+
+.toHome
+{
+	width:64px;
+	height:64px;
+	cursor:pointer;
+	position:fixed;
+	left:5px;
+	top:5px;
+	font-size: 12px;
+	line-height:12px;
+	text-decoration: none;
+	border-radius:3px;
+}
+
+.toHome:hover
+{
+	background-color: #ffa;
 }

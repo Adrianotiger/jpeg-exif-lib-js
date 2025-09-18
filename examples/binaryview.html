@@ -14,19 +14,19 @@
 			Drag an image here (local image or a test image), to parse the binary.
 			<br>
 			<span style="display:inline-block;">
-				<img id="image1" src="../test_images/test_noexif.jpg" style="max-height:120px" /><br>
+				<img tag="NO EXIF" class="testImage" src="../test_images/test_noexif.jpg" /><br>
 				NO EXIF
 			</span>
 			<span style="display:inline-block;">
-				<img id="image2" src="../test_images/test_baseexif.jpg" style="max-height:120px" /><br>
+				<img tag="BASE EXIF" class="testImage" src="../test_images/test_baseexif.jpg" /><br>
 				BASE EXIF
 			</span>
 			<span style="display:inline-block;">
-				<img id="image3" src="../test_images/test_advanced.jpg" style="max-height:120px" /><br>
+				<img tag="EXTENDED EXIF" class="testImage" src="../test_images/test_advanced.jpg" /><br>
 				EXTENDED EXIF
 			</span>
 			<span style="display:inline-block;">
-				<img id="image4" src="../test_images/test_full.jpg" style="max-height:120px" /><br>
+				<img  tag="FULL EXIF" class="testImage" src="../test_images/test_full.jpg" /><br>
 				FULL EXIF
 			</span>
 			<div id="bin_zone" class="bindiv">
@@ -56,7 +56,9 @@
 		</div>
 		<img id="image0" src="" style="max-height:60px;position:fixed;top:5px;right:50px;box-shadow:5px 5px 5px #000;" />
 
-		<a style="width:64px;height:64px;cursor:pointer;position:fixed;left:5px;top:5px;" href="../">🏠<br><small>Back to HOME</small></a>
+		<a class="toHome"href="../">
+			back to <img src="../images/favicon_32.png"><br>HOME
+		</a>
 		
 		<script>
 			let jpeg = null;
@@ -71,22 +73,18 @@
 			dp.addEventListener("drop", dropHandler);
 			dp.addEventListener("dragover", (event) => {
 				console.log("File(s) in drop zone");
-				dp.style.borderColor = "green";
-				dp.style.backgroundColor = "gray";
+				dp.classList.add("imagedivdrop");
 				// Prevent default behavior (Prevent file from being opened)
 				event.preventDefault();
 			});
 			dp.addEventListener("dragleave", (event) => { 
-				dp.style.borderColor = "blue";
-				dp.style.backgroundColor = "white";
+				dp.classList.remove("imagedivdrop");
 			});
 			
 			function dropHandler(ev) 
 			{
 				console.log("File(s) dropped");
-				
-				dp.style.borderColor = "blue";
-				dp.style.backgroundColor = "white";
+				dp.classList.remove("imagedivdrop");
 
 				// Prevent default behavior (Prevent file from being opened)
 				ev.preventDefault();
@@ -371,6 +369,7 @@
 				}
 			}
 			JpegTools.addContextToImages();
+			JpegTools.catchConsoleErrors();
 		</script>
   </body>
 </html>
